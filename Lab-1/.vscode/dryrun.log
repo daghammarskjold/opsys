@@ -1,0 +1,6 @@
+make --dry-run --keep-going --print-directory
+make: Entering directory '/home/krille/Documents/Lab-1'
+make: Leaving directory '/home/krille/Documents/Lab-1'
+ 
+make: *** No targets.  Stop.
+
