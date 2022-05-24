@@ -75,9 +75,9 @@ void one_monster_fights(struct Monster all_monsters[], int nr_monsters, int this
 
 void *loop_amount_of_rounds(void * arguments){
     int monster_number = ((struct Monster*)arguments)->number;
-    printf("------Monster %d fights------\n", monster_number);
+    //printf("------Monster %d fights------\n", monster_number);
     for (int round = 0; round < global_nr_rounds; ++ round){
-        printf("Fighting round: %d\n", round);
+        //printf("Fighting round: %d\n", round);
         one_monster_fights(global_all_monsters, global_nr_monsters, monster_number);
     }
 }
@@ -92,7 +92,7 @@ void *loop_amount_of_rounds(void * arguments){
 void all_monsters_fight(struct Monster all_monsters[], int nr_monsters) {
 
     for (int monster = 0; monster < nr_monsters; ++monster){
-        printf("Creating thread number:%d\n", monster);
+        //printf("Creating thread number:%d\n", monster);
         int ret = pthread_create(&all_monsters[monster].this_monster_thread, NULL, loop_amount_of_rounds,
         (void*)&all_monsters[monster].number);
 

@@ -8,15 +8,12 @@
 #include <string.h>
 #include <time.h>
 #include <assert.h>
-#include <pthread.h>
 
 struct Monster {
     int number;
     int fights;
     int fights_won;
     int fights_lost;
-    pthread_t this_monster_thread;
-    pthread_mutex_t this_lock;
 };
 
 // In a multi-threaded version,
@@ -38,8 +35,6 @@ struct Monster *make_monsters(int nr_monsters) {
         all_monsters[monster].fights = 0;
         all_monsters[monster].fights_won = 0;
         all_monsters[monster].fights_lost = 0;
-
-        pthread_mutex_init(&all_monsters[monster].this_lock, NULL);
     }
     return all_monsters;
 } // make_monsters
@@ -60,43 +55,22 @@ void one_monster_fights(struct Monster all_monsters[], int nr_monsters, int this
     // we don't want to have two threads
     // updating the same monster's data at the same time.
     // Here, we are updating monsters number "this_monster" and "opponent".
-    pthread_mutex_lock(&all_monsters[this_monster].this_lock);
+
     all_monsters[this_monster].fights++;
-    pthread_mutex_unlock(&all_monsters[this_monster].this_lock);
-    pthread_mutex_lock(&all_monsters[opponent].this_lock);
     all_monsters[opponent].fights++;
-    pthread_mutex_unlock(&all_monsters[opponent].this_lock);
 
     if (rand() % 2 == 0) {
         // Won the fight!
-        pthread_mutex_lock(&all_monsters[this_monster].this_lock);
         all_monsters[this_monster].fights_won++;
-        pthread_mutex_unlock(&all_monsters[this_monster].this_lock);
-
-        pthread_mutex_lock(&all_monsters[opponent].this_lock);
         all_monsters[opponent].fights_lost++;
-        pthread_mutex_unlock(&all_monsters[opponent].this_lock);
     }
     else {
         // Lost the fight.
-        pthread_mutex_lock(&all_monsters[this_monster].this_lock);
         all_monsters[this_monster].fights_lost++;
-        pthread_mutex_unlock(&all_monsters[this_monster].this_lock);
-
-        pthread_mutex_lock(&all_monsters[opponent].this_lock);
         all_monsters[opponent].fights_won++;
-        pthread_mutex_unlock(&all_monsters[opponent].this_lock);
     }
 } // one_monster_fights
 
-void *loop_amount_of_rounds(void * arguments){
-    int monster_number = ((struct Monster*)arguments)->number;
-    //printf("------Monster %d fights------\n", monster_number);
-    for (int round = 0; round < global_nr_rounds; ++ round){
-        //printf("Fighting round: %d\n", round);
-        one_monster_fights(global_all_monsters, global_nr_monsters, monster_number);
-    }
-}
 // Simulates one round of all the monsters fighting.
 // Each monster will attack a random other monster,
 // so there will be 2*nr_monsters fights in each round.
@@ -106,17 +80,8 @@ void *loop_amount_of_rounds(void * arguments){
 // in a loop for "nr_rounds" times.
 //
 void all_monsters_fight(struct Monster all_monsters[], int nr_monsters) {
-
-    for (int monster = 0; monster < nr_monsters; ++monster){
-        //printf("Creating thread number:%d\n", monster);
-        int ret = pthread_create(&all_monsters[monster].this_monster_thread, NULL, loop_amount_of_rounds,
-        (void*)&all_monsters[monster].number);
-
-        if (ret){
-            printf("Could not create pthread number:%d\n", monster);
-            exit(EXIT_FAILURE);
-        }
-    }
+    for (int monster = 0; monster < nr_monsters; ++monster)
+        one_monster_fights(all_monsters, nr_monsters, monster);
 } // all_monsters_fight
 
 // Shows some statistics, after the simulation has finished
@@ -173,16 +138,9 @@ int main(int argc, char *argv[]) {
            nr_rounds, nr_monsters);
 
     // To make this program multi-threaded,
-    // instead start one thread for each monster 
-    /*
+    // instead start one thread for each monster
     for (int round = 0; round < nr_rounds; ++round) {
-        
-    }
-    */
-    all_monsters_fight(all_monsters, nr_monsters);
-
-    for (int monster = 0; monster < nr_monsters; ++monster){
-        pthread_join(all_monsters[monster].this_monster_thread, NULL);
+        all_monsters_fight(all_monsters, nr_monsters);
     }
 
     printf("Done!\n");
